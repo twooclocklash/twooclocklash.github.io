@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two O'clock Lash - 顧客諮詢與服務管理系統</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- 導航列 -->
+        <nav class="glass-nav">
+            <div class="logo">TWO O'CLOCK LASH</div>
+            <div class="nav-links">
+                <button onclick="showSection('home')" id="nav-home">首頁</button>
+                <button onclick="showSection('history')" id="nav-history">查詢紀錄</button>
+            </div>
+        </nav>
+
+        <main class="container">
+            <!-- 首頁 / 歡迎頁 -->
+            <section id="home-section" class="active">
+                <div class="hero-content">
+                    <h1>歡迎來到<br>Two O'clock Lash</h1>
+                    <p>專業、細緻、專屬於您的美麗旅程</p>
+                    <div class="cta-group">
+                        <button class="btn-primary" onclick="showSection('form')">開始填寫諮詢表</button>
+                        <button class="btn-secondary" onclick="showSection('history')">查看我的紀錄</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 填寫資料頁 (包含須知、基本資料、問卷) -->
+            <section id="form-section">
+                <div class="form-wizard">
+                    <div class="wizard-steps">
+                        <div class="step active" id="step-1-indicator">1. 閱讀須知</div>
+                        <div class="step" id="step-2-indicator">2. 基本資料</div>
+                        <div class="step" id="step-3-indicator">3. 專業諮詢</div>
+                    </div>
+
+                    <!-- Step 1: 須知 -->
+                    <div id="step-1" class="step-content active">
+                        <div class="glass-card">
+                            <h2>嫁接睫毛須知</h2>
+                            <div class="terms-content">
+                                <ol>
+                                    <li>為保障顧客與美睫師雙方之衛生安全，若您目前眼部患有任何疾病，如結膜炎、針眼、發炎和其他眼睛之疾病，則無法進行嫁接，請您先行就醫，確認完全根治後再行預約。</li>
+                                    <li>若有接受過任何眼部手術，如美容整形、視力矯正手術等，請您休息三個月以上至傷口完全癒合，並經過醫師認可且確認無傷口，才可進行嫁接睫毛。</li>
+                                    <li>我了解每人體質不同，可能於嫁接過程產生不適感，如流淚、紅眼等。</li>
+                                    <li>嫁接睫毛當天請勿畫眼妝，睫毛膏、眼影及硬式隱形眼鏡務必卸除。</li>
+                                    <li>由於個人眼型及本身睫毛數量差異，嫁接後之效果也會有所不同。接睫後3天內可免費卸除，超過3天依店家價格收費。</li>
+                                    <li>若您連續續接睫毛，可擦睫毛保養液保養睫毛，使新生睫毛得更密更健康。</li>
+                                    <li>人體毛髮都有代謝週期，真睫毛的生長週期約為3個月，因此睫毛自然脫落皆屬正常現象。</li>
+                                    <li>日式睫毛嫁接不會將睫毛嫁接於眼皮或眼瞼上，若有不適請立即至專科診所就醫。</li>
+                                    <li>嫁接睫毛可以維持約3～5週的時間，視嫁接方式、個人代謝、保養方式等因素影響。</li>
+                                    <li>本工作室取得衛生安全及商品認證，給您最安心的保障。</li>
+                                </ol>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn-primary" onclick="nextStep(2)">我已閱讀並同意</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: 基本資料 -->
+                    <div id="step-2" class="step-content">
+                        <div class="glass-card">
+                            <h2>顧客基本資料表</h2>
+                            <form id="basic-info-form" class="grid-form">
+                                <div class="form-group">
+                                    <label>姓名</label>
+                                    <input type="text" name="name" required placeholder="請輸入全名">
+                                </div>
+                                <div class="form-group">
+                                    <label>電話</label>
+                                    <input type="tel" name="phone" placeholder="09xx-xxx-xxx">
+                                </div>
+                                <div class="form-group">
+                                    <label>生日</label>
+                                    <input type="date" name="birthday" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>職業</label>
+                                    <input type="text" name="occupation" placeholder="例如：上班族">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>地址</label>
+                                    <input type="text" name="address" placeholder="請輸入聯繫地址">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>哪裡知道我們</label>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" name="referral" value="IG"> Instagram</label>
+                                        <label><input type="checkbox" name="referral" value="FB"> Facebook</label>
+                                        <label><input type="checkbox" name="referral" value="Search"> 搜尋關鍵字</label>
+                                        <label><input type="checkbox" name="referral" value="Friend"> 朋友介紹</label>
+                                        <label><input type="checkbox" name="referral" value="Nearby"> 在家附近</label>
+                                        <label><input type="checkbox" name="referral" value="Other"> 其他</label>
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="form-actions">
+                                <button class="btn-secondary" onclick="prevStep(1)">上一步</button>
+                                <button class="btn-primary" onclick="nextStep(3)">下一步：專業諮詢</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: 專業問卷 -->
+                    <div id="step-3" class="step-content">
+                        <div class="glass-card">
+                            <h2>美睫專業諮詢問卷</h2>
+                            <form id="consultation-form" class="scroll-form">
+                                <!-- 分組 A -->
+                                <div class="form-section-title">眼睛與皮膚狀況</div>
+                                <div class="form-group">
+                                    <label>臉部肌膚有無任何過敏？</label>
+                                    <select name="allergy">
+                                        <option value="none">沒有</option>
+                                        <option value="yes">有 (食物/花粉/動物/金屬/藥物/化妝品/酒精等)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>眼周目前皮膚狀況：</label>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="skin_status" value="正常" checked> 正常</label>
+                                        <label><input type="radio" name="skin_status" value="敏感"> 敏感</label>
+                                        <label><input type="radio" name="skin_status" value="乾燥"> 乾燥</label>
+                                        <label><input type="radio" name="skin_status" value="油性"> 油性</label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>目前是否有戴隱形眼鏡習慣？</label>
+                                    <select name="contact_lens">
+                                        <option value="none">沒有</option>
+                                        <option value="daily">有 (每天)</option>
+                                        <option value="sometimes">有 (偶爾)</option>
+                                    </select>
+                                </div>
+
+                                <!-- 分組 B -->
+                                <div class="form-section-title">美睫需求偏好</div>
+                                <div class="form-group">
+                                    <label>嫁接睫毛主要目的：</label>
+                                    <select name="purpose">
+                                        <option value="habit">一直有嫁接習慣</option>
+                                        <option value="makeup">眼妝效果</option>
+                                        <option value="event">有活動</option>
+                                        <option value="wedding">結婚</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>希望嫁接的款式：</label>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="style" value="裸妝感" checked> 裸妝感</label>
+                                        <label><input type="radio" name="style" value="眼線感"> 眼線感</label>
+                                        <label><input type="radio" name="style" value="濃密感"> 濃密感</label>
+                                    </div>
+                                </div>
+
+                                <!-- 分組 C -->
+                                <div class="form-section-title">同意與測試</div>
+                                <div class="form-group">
+                                    <label>是否可以拍攝眼部作品分享？</label>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="photo_consent" value="yes" checked> 可以</label>
+                                        <label><input type="radio" name="photo_consent" value="no"> 不可以</label>
+                                    </div>
+                                </div>
+
+                                <!-- 簽名區塊 -->
+                                <div class="form-section-title">顧客確認簽名</div>
+                                <div class="signature-container">
+                                    <p class="signature-hint">請在下方空白處簽名：</p>
+                                    <canvas id="signature-pad" width="600" height="200"></canvas>
+                                    <button type="button" class="btn-clear" onclick="clearSignature()">清除重簽</button>
+                                </div>
+                            </form>
+                            <div class="form-actions">
+                                <button class="btn-secondary" onclick="prevStep(2)">上一步</button>
+                                <button class="btn-success" onclick="submitForm()">完成並儲存</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 查詢紀錄頁 -->
+            <section id="history-section">
+                <div class="glass-card history-container">
+                    <h2>查詢我的服務紀錄</h2>
+                    <div style="margin-bottom: 20px;" class="radio-group">
+                        <label><input type="radio" name="search-method" value="phone" checked onchange="toggleSearchMethod()"> 透過電話查詢</label>
+                        <label><input type="radio" name="search-method" value="name_birthday" onchange="toggleSearchMethod()"> 透過姓名與生日查詢</label>
+                    </div>
+                    
+                    <div id="search-phone-box" class="search-box">
+                        <input type="tel" id="search-phone" placeholder="請輸入手機號碼 (例如: 0912345678)">
+                        <button class="btn-primary" onclick="searchHistory()">立即查詢</button>
+                    </div>
+
+                    <div id="search-name-box" class="search-box" style="display:none; flex-wrap:wrap; gap:10px;">
+                        <input type="text" id="search-name" placeholder="請輸入姓名" style="flex:1; min-width:120px;">
+                        <input type="date" id="search-birthday" style="flex:1; min-width:140px;">
+                        <button class="btn-primary" onclick="searchHistory()">立即查詢</button>
+                    </div>
+
+                    <div id="search-result" class="result-area">
+                        <!-- 結果將顯示在這裡 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
