@@ -1,3 +1,8 @@
+// Supabase 設定
+const SUPABASE_URL = 'https://qybnjjwklbagqfqvlrnq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_8hCI8pxHulHXge25IvEQXw_bSYFyLo6';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // 全域變數
 let canvas, ctx, drawing = false;
 
@@ -31,7 +36,10 @@ function validateField(input) {
     let isValid = true;
     const value = input.value.trim();
     if (input.name === 'phone') {
-        isValid = /^09\d{8}$/.test(value.replace(/-/g, ''));
+        // 如果有填寫才驗證格式，沒填寫則過 (因為非必填)
+        if (value.length > 0) {
+            isValid = /^09\d{8}$/.test(value.replace(/-/g, ''));
+        }
     } else {
         isValid = value.length > 0;
     }
@@ -62,18 +70,15 @@ function initSignaturePad() {
     canvas.onpointerdown = (e) => {
         drawing = true;
         ctx.beginPath();
-        // 取得相對於畫布的座標
-        const x = e.offsetX || (e.pageX - canvas.offsetLeft);
-        const y = e.offsetY || (e.pageY - canvas.offsetTop);
-        ctx.moveTo(x, y);
+        const rect = canvas.getBoundingClientRect();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
         canvas.setPointerCapture(e.pointerId);
     };
 
     canvas.onpointermove = (e) => {
         if (!drawing) return;
-        const x = e.offsetX || (e.pageX - canvas.offsetLeft);
-        const y = e.offsetY || (e.pageY - canvas.offsetTop);
-        ctx.lineTo(x, y);
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
         ctx.stroke();
     };
 
@@ -113,7 +118,7 @@ function prevStep(step) {
     nextStep(step);
 }
 
-function submitForm() {
+async function submitForm() {
     const basicForm = document.getElementById('basic-info-form');
     const consultForm = document.getElementById('consultation-form');
     
@@ -137,22 +142,41 @@ function submitForm() {
         return;
     }
 
-    const records = JSON.parse(localStorage.getItem('eyelash_records') || '[]');
-    records.push({
-        timestamp: new Date().toLocaleString(),
-        ...Object.fromEntries(new FormData(basicForm).entries()),
-        ...Object.fromEntries(new FormData(consultForm).entries()),
-        referral: new FormData(basicForm).getAll('referral'),
-        signature: signatureImage
-    });
-    localStorage.setItem('eyelash_records', JSON.stringify(records));
+    // 顯示讀取中狀態
+    const submitBtn = document.querySelector('.btn-success');
+    const originalText = submitBtn.innerText;
+    submitBtn.innerText = '儲存中...';
+    submitBtn.disabled = true;
 
-    alert('資料已成功儲存！');
-    showSection('home');
-    basicForm.reset();
-    consultForm.reset();
-    clearSignature();
-    nextStep(1);
+    try {
+        const basicData = Object.fromEntries(new FormData(basicForm).entries());
+        const consultData = Object.fromEntries(new FormData(consultForm).entries());
+        const referrals = new FormData(basicForm).getAll('referral');
+
+        const { data, error } = await _supabase
+            .from('customers')
+            .insert([{
+                ...basicData,
+                ...consultData,
+                referral: referrals,
+                signature: signatureImage
+            }]);
+
+        if (error) throw error;
+
+        alert('資料已成功儲存至雲端！');
+        showSection('home');
+        basicForm.reset();
+        consultForm.reset();
+        clearSignature();
+        nextStep(1);
+    } catch (err) {
+        console.error('Error saving data:', err);
+        alert('儲存失敗，請檢查網路連線或稍後再試。');
+    } finally {
+        submitBtn.innerText = originalText;
+        submitBtn.disabled = false;
+    }
 }
 
 function toggleSearchMethod() {
@@ -166,35 +190,52 @@ function toggleSearchMethod() {
     }
 }
 
-function searchHistory() {
+async function searchHistory() {
     const method = document.querySelector('input[name="search-method"]:checked').value;
-    const records = JSON.parse(localStorage.getItem('eyelash_records') || '[]');
-    let results = [];
+    const searchBtn = document.querySelector('.search-box .btn-primary');
+    const originalText = searchBtn.innerText;
+    
+    let query = _supabase.from('customers').select('*');
 
     if (method === 'phone') {
         const phone = document.getElementById('search-phone').value.trim().replace(/-/g, '');
         if (!phone) { alert('請輸入電話號碼'); return; }
-        results = records.filter(r => r.phone && r.phone.replace(/-/g, '') === phone);
+        query = query.eq('phone', phone);
     } else {
         const name = document.getElementById('search-name').value.trim();
         const birthday = document.getElementById('search-birthday').value;
         if (!name || !birthday) { alert('請輸入姓名與生日'); return; }
-        results = records.filter(r => r.name === name && r.birthday === birthday);
+        query = query.eq('name', name).eq('birthday', birthday);
     }
 
-    const resultArea = document.getElementById('search-result');
-    resultArea.innerHTML = results.length ? '' : '<p style="text-align:center; color:#999;">查無紀錄。</p>';
+    searchBtn.innerText = '查詢中...';
+    searchBtn.disabled = true;
 
-    results.forEach(record => {
-        const item = document.createElement('div');
-        item.className = 'record-item';
-        item.innerHTML = `
-            <div class="record-header"><span>日期：${record.timestamp}</span><span style="color:#c5a059;">${record.name}</span></div>
-            <div class="record-details"><div>風格：${record.style}</div><div>目的：${getPurposeLabel(record.purpose)}</div><div>眼周：${record.skin_status}</div></div>
-            ${record.signature ? `<div style="margin-top:10px; border-top:1px solid #eee;"><p style="font-size:0.7rem; color:#888;">簽名：</p><img src="${record.signature}" style="height:60px;"></div>` : ''}
-        `;
-        resultArea.appendChild(item);
-    });
+    try {
+        const { data: results, error } = await query.order('created_at', { ascending: false });
+        if (error) throw error;
+
+        const resultArea = document.getElementById('search-result');
+        resultArea.innerHTML = results.length ? '' : '<p style="text-align:center; color:#999;">查無紀錄。</p>';
+
+        results.forEach(record => {
+            const date = new Date(record.created_at).toLocaleString();
+            const item = document.createElement('div');
+            item.className = 'record-item';
+            item.innerHTML = `
+                <div class="record-header"><span>日期：${date}</span><span style="color:#c5a059;">${record.name}</span></div>
+                <div class="record-details"><div>風格：${record.style}</div><div>目的：${getPurposeLabel(record.purpose)}</div><div>眼周：${record.skin_status}</div></div>
+                ${record.signature ? `<div style="margin-top:10px; border-top:1px solid #eee;"><p style="font-size:0.7rem; color:#888;">簽名：</p><img src="${record.signature}" style="height:60px;"></div>` : ''}
+            `;
+            resultArea.appendChild(item);
+        });
+    } catch (err) {
+        console.error('Error searching data:', err);
+        alert('查詢失敗，請稍後再試。');
+    } finally {
+        searchBtn.innerText = originalText;
+        searchBtn.disabled = false;
+    }
 }
 
 function getPurposeLabel(v) { return {habit:'日常', makeup:'眼妝', event:'活動', wedding:'結婚'}[v] || v; }
