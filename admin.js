@@ -44,13 +44,18 @@ function initMarkingCanvases() {
             isDrawingMarking = true;
             ctxs[side].beginPath();
             const rect = c.getBoundingClientRect();
-            ctxs[side].moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            // 修正：使用 clientX/Y 減去 rect 的位置，並考慮縮放
+            const x = (e.clientX - rect.left) * (c.width / rect.width);
+            const y = (e.clientY - rect.top) * (c.height / rect.height);
+            ctxs[side].moveTo(x, y);
             c.setPointerCapture(e.pointerId);
         };
         c.onpointermove = (e) => {
             if (!isDrawingMarking) return;
             const rect = c.getBoundingClientRect();
-            ctxs[side].lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            const x = (e.clientX - rect.left) * (c.width / rect.width);
+            const y = (e.clientY - rect.top) * (c.height / rect.height);
+            ctxs[side].lineTo(x, y);
             ctxs[side].stroke();
         };
         c.onpointerup = () => { isDrawingMarking = false; };
@@ -116,14 +121,16 @@ async function openEditor(customer) {
     document.getElementById('editor-modal').style.display = 'block';
     document.body.style.overflow = 'hidden'; 
 
-    // 重點：在視窗顯示後，重新初始化畫布寬高
-    initMarkingCanvases();
-
-    // 清除並載入舊標記
-    clearMarking('left');
-    clearMarking('right');
-    if (customer.marking_left) loadMarkingImage('left', customer.marking_left);
-    if (customer.marking_right) loadMarkingImage('right', customer.marking_right);
+    // 重點：在視窗完全顯示後（延遲 100 毫秒），再初始化畫布寬高
+    setTimeout(() => {
+        initMarkingCanvases();
+        
+        // 載入舊標記 (移動到這裡，確保畫布已經準備好)
+        clearMarking('left');
+        clearMarking('right');
+        if (customer.marking_left) loadMarkingImage('left', customer.marking_left);
+        if (customer.marking_right) loadMarkingImage('right', customer.marking_right);
+    }, 100);
 
     // 填充編輯欄位 (管理者專用)
     document.getElementById('edit-upper').value = customer.upper_lash_count || '';
