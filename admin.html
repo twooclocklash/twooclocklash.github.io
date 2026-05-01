@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two O'clock Lash - 管理者後台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --admin-gold: #c5a059;
+            --admin-bg: #fdfaf5;
+        }
+        body { background: var(--admin-bg); font-family: 'Noto Sans TC', sans-serif; }
+        .admin-container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+        .login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(5px);
+        }
+        .login-box { background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .login-box input { padding: 12px; width: 200px; border: 1px solid #ddd; border-radius: 10px; margin: 10px 0; font-size: 1.2rem; text-align: center; }
+        
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--admin-gold); padding-bottom: 15px; }
+        .admin-header h1 { font-family: 'Fredoka', cursive; color: var(--admin-gold); margin: 0; }
+
+        .search-section { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .search-row { display: flex; gap: 10px; }
+        .search-row input { flex: 1; padding: 12px; border: 1px solid #eee; border-radius: 10px; }
+
+        .results-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+        .customer-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid var(--admin-gold); cursor: pointer; transition: 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .customer-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .customer-card .name { font-weight: bold; font-size: 1.1rem; color: #333; }
+        .customer-card .phone { color: #888; font-size: 0.9rem; }
+
+        .editor-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 900; display: none;
+        }
+        .editor-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 800px; height: 85vh; background: white; border-radius: 20px;
+            z-index: 901; overflow-y: auto; padding: 30px;
+        }
+        .editor-section { margin-bottom: 25px; border-top: 1px solid #eee; padding-top: 20px; }
+        .editor-section h3 { color: var(--admin-gold); margin-bottom: 15px; }
+        .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .info-item { margin-bottom: 10px; }
+        .info-item label { display: block; font-size: 0.8rem; color: #999; margin-bottom: 4px; }
+        .info-item input, .info-item textarea { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
+        
+        .admin-note-area { background: #fff9f0; padding: 20px; border-radius: 12px; border: 1px solid #ffe8c8; }
+        
+        .btn-save { background: var(--admin-gold); color: white; border: none; padding: 15px 40px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; font-size: 1.1rem; }
+        .btn-close { position: absolute; top: 20px; right: 20px; background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+        
+        @media (max-width: 600px) {
+            .grid-info { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <h2 style="font-family:'Fredoka'; color:#c5a059;">Two O'clock Admin</h2>
+            <p>請輸入管理者密碼</p>
+            <input type="password" id="admin-password" placeholder="••••••••">
+            <br>
+            <button class="btn-primary" onclick="checkLogin()" style="width: 100%; margin-top: 10px;">登入</button>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>TWO O'CLOCK LASH <span style="font-size: 0.8rem; color: #999;">Management</span></h1>
+            <button class="btn-primary" onclick="location.reload()" style="font-size: 0.8rem; padding: 5px 15px;">登出</button>
+        </header>
+
+        <section class="search-section">
+            <h3>搜尋客戶</h3>
+            <div class="search-row">
+                <input type="text" id="admin-search-input" placeholder="輸入姓名或電話搜尋..." oninput="adminSearch()">
+            </div>
+        </section>
+
+        <div id="admin-results" class="results-list">
+            <!-- 搜尋結果會顯示在這裡 -->
+            <p style="text-align:center; color:#ccc; grid-column: 1/-1;">請輸入關鍵字開始搜尋...</p>
+        </div>
+    </div>
+
+    <!-- 編輯彈窗 -->
+    <div id="editor-overlay" class="editor-overlay" onclick="closeEditor()"></div>
+    <div id="editor-modal" class="editor-modal" style="display: none;">
+        <button class="btn-close" onclick="closeEditor()">✕</button>
+        <h2 id="edit-name" style="color: #c5a059; margin-bottom: 5px;">客戶姓名</h2>
+        <p id="edit-phone" style="color: #888; margin-bottom: 20px;">0900-000-000</p>
+
+        <div class="editor-section admin-note-area">
+            <h3>✨ 服務記錄 (管理者專用)</h3>
+            <div class="grid-info">
+                <div class="info-item">
+                    <label>上睫毛根數</label>
+                    <input type="text" id="edit-upper" placeholder="例如：120 根">
+                </div>
+                <div class="info-item">
+                    <label>下睫毛根數</label>
+                    <input type="text" id="edit-lower" placeholder="例如：20 根">
+                </div>
+            </div>
+            <div class="info-item">
+                <label>服務備註 / 客戶習慣</label>
+                <textarea id="edit-notes" rows="4" placeholder="在此輸入客人的特殊習慣或本次服務紀錄..."></textarea>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <h3>🎨 眼型設計標記 (管理者專用)</h3>
+            <div class="grid-info">
+                <div class="info-item">
+                    <label>左眼標記</label>
+                    <div style="position:relative; background:white; border:1px solid #ddd; border-radius:10px; overflow:hidden;">
+                        <!-- 用 SVG 代碼直接畫出睫毛底圖 -->
+                        <svg viewBox="0 0 200 120" style="width:100%; display:block; opacity: 0.2; background:#fff;">
+                            <path d="M40,40 Q100,65 160,40" stroke="black" fill="transparent" stroke-width="3"/>
+                            <line x1="40" y1="40" x2="20" y2="65" stroke="black" stroke-width="2"/>
+                            <line x1="55" y1="48" x2="40" y2="85" stroke="black" stroke-width="2"/>
+                            <line x1="70" y1="53" x2="65" y2="95" stroke="black" stroke-width="2"/>
+                            <line x1="85" y1="56" x2="85" y2="105" stroke="black" stroke-width="2"/>
+                            <line x1="100" y1="57" x2="100" y2="110" stroke="black" stroke-width="2"/>
+                            <line x1="115" y1="56" x2="115" y2="105" stroke="black" stroke-width="2"/>
+                            <line x1="130" y1="53" x2="135" y2="95" stroke="black" stroke-width="2"/>
+                            <line x1="145" y1="48" x2="160" y2="85" stroke="black" stroke-width="2"/>
+                            <line x1="160" y1="40" x2="180" y2="65" stroke="black" stroke-width="2"/>
+                        </svg>
+                        <canvas id="canvas-left" style="position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair;"></canvas>
+                    </div>
+                    <button class="btn-primary" onclick="clearMarking('left')" style="font-size:0.7rem; padding:3px 10px; margin-top:5px; background:#666;">清除左眼</button>
+                </div>
+                <div class="info-item">
+                    <label>右眼標記</label>
+                    <div style="position:relative; background:white; border:1px solid #ddd; border-radius:10px; overflow:hidden;">
+                        <!-- 用 SVG 代碼直接畫出睫毛底圖 -->
+                        <svg viewBox="0 0 200 120" style="width:100%; display:block; opacity: 0.2; background:#fff;">
+                            <path d="M40,40 Q100,65 160,40" stroke="black" fill="transparent" stroke-width="3"/>
+                            <line x1="40" y1="40" x2="20" y2="65" stroke="black" stroke-width="2"/>
+                            <line x1="55" y1="48" x2="40" y2="85" stroke="black" stroke-width="2"/>
+                            <line x1="70" y1="53" x2="65" y2="95" stroke="black" stroke-width="2"/>
+                            <line x1="85" y1="56" x2="85" y2="105" stroke="black" stroke-width="2"/>
+                            <line x1="100" y1="57" x2="100" y2="110" stroke="black" stroke-width="2"/>
+                            <line x1="115" y1="56" x2="115" y2="105" stroke="black" stroke-width="2"/>
+                            <line x1="130" y1="53" x2="135" y2="95" stroke="black" stroke-width="2"/>
+                            <line x1="145" y1="48" x2="160" y2="85" stroke="black" stroke-width="2"/>
+                            <line x1="160" y1="40" x2="180" y2="65" stroke="black" stroke-width="2"/>
+                        </svg>
+                        <canvas id="canvas-right" style="position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair;"></canvas>
+                    </div>
+                    <button class="btn-primary" onclick="clearMarking('right')" style="font-size:0.7rem; padding:3px 10px; margin-top:5px; background:#666;">清除右眼</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <h3>📋 基本資料 (不可修改)</h3>
+            <div class="grid-info">
+                <div class="info-item"><label>生日</label><input type="text" id="detail-birthday" readonly></div>
+                <div class="info-item"><label>職業</label><input type="text" id="detail-occupation" readonly></div>
+                <div class="info-item"><label>地址</label><input type="text" id="detail-address" readonly></div>
+                <div class="info-item"><label>從何處得知</label><input type="text" id="detail-referral" readonly></div>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <h3>🔍 諮詢詳情</h3>
+            <div class="grid-info">
+                <div class="info-item"><label>睫毛嫁接經驗</label><input type="text" id="detail-allergy" readonly></div>
+                <div class="info-item"><label>眼周敏感狀況</label><input type="text" id="detail-skin" readonly></div>
+                <div class="info-item"><label>是否配戴隱形眼鏡</label><input type="text" id="detail-lens" readonly></div>
+                <div class="info-item"><label>本次嫁接目的</label><input type="text" id="detail-purpose" readonly></div>
+                <div class="info-item"><label>希望呈現風格</label><input type="text" id="detail-style" readonly></div>
+                <div class="info-item"><label>同意拍攝作品集</label><input type="text" id="detail-consent" readonly></div>
+            </div>
+        </div>
+
+        <div class="editor-section" id="signature-view">
+            <h3>✍️ 客戶簽名</h3>
+            <img id="detail-signature" src="" style="width: 100%; border: 1px solid #eee; border-radius: 10px;">
+        </div>
+
+        <button class="btn-save" onclick="saveAdminChanges()">儲存所有變更</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
