@@ -111,6 +111,14 @@ async function openEditor(customer) {
     document.getElementById('edit-name').innerText = customer.name;
     document.getElementById('edit-phone').innerText = customer.phone || '無電話';
     
+    // 顯示視窗
+    document.getElementById('editor-overlay').style.display = 'block';
+    document.getElementById('editor-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden'; 
+
+    // 重點：在視窗顯示後，重新初始化畫布寬高
+    initMarkingCanvases();
+
     // 清除並載入舊標記
     clearMarking('left');
     clearMarking('right');
