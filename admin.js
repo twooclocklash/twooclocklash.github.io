@@ -85,7 +85,7 @@ async function fetchAllRecords() {
 // 渲染列表
 function renderList(records) {
     const listArea = document.getElementById('admin-results');
-    listArea.innerHTML = records.length ? '' : '<p style="text-align:center; color:#ccc; grid-column: 1/-1;">請輸入關鍵字開始搜尋...</p>';
+    listArea.innerHTML = records.length ? '' : '<div class="admin-loading"><p style="color:#ccc;">查無符合條件的客戶。</p></div>';
 
     records.forEach(r => {
         const card = document.createElement('div');
@@ -110,22 +110,25 @@ function adminSearch() {
     renderList(filtered);
 }
 
-// 打開編輯窗
+// 打開編輯窗 (全頁面模式)
 async function openEditor(customer) {
     currentCustomerId = customer.id;
     document.getElementById('edit-name').innerText = customer.name;
     document.getElementById('edit-phone').innerText = customer.phone || '無電話';
     
-    // 顯示視窗
-    document.getElementById('editor-overlay').style.display = 'block';
-    document.getElementById('editor-modal').style.display = 'block';
-    document.body.style.overflow = 'hidden'; 
+    // 切換視圖：隱藏列表，顯示編輯頁
+    document.getElementById('admin-list-view').style.display = 'none';
+    const editView = document.getElementById('admin-edit-view');
+    editView.style.display = 'block';
+    
+    // 確保回到最上方
+    window.scrollTo(0, 0);
 
-    // 重點：在視窗完全顯示後（延遲 100 毫秒），再初始化畫布寬高
+    // 重點：在視窗顯示後（延遲 100 毫秒），再初始化畫布寬高
     setTimeout(() => {
         initMarkingCanvases();
         
-        // 載入舊標記 (移動到這裡，確保畫布已經準備好)
+        // 載入舊標記 (確保畫布已經準備好)
         clearMarking('left');
         clearMarking('right');
         if (customer.marking_left) loadMarkingImage('left', customer.marking_left);
@@ -166,9 +169,9 @@ function loadMarkingImage(side, dataUrl) {
 }
 
 function closeEditor() {
-    document.getElementById('editor-overlay').style.display = 'none';
-    document.getElementById('editor-modal').style.display = 'none';
-    document.body.style.overflow = 'auto';
+    document.getElementById('admin-edit-view').style.display = 'none';
+    document.getElementById('admin-list-view').style.display = 'block';
+    window.scrollTo(0, 0);
 }
 
 // 儲存變更

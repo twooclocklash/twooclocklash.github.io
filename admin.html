@@ -55,6 +55,13 @@
         .btn-save { background: var(--admin-gold); color: white; border: none; padding: 15px 40px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; font-size: 1.1rem; }
         .btn-close { position: absolute; top: 20px; right: 20px; background: #eee; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
         
+        .admin-loading { grid-column: 1/-1; text-align: center; padding: 50px; color: var(--admin-gold); }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--admin-gold);
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         @media (max-width: 600px) {
             .grid-info { grid-template-columns: 1fr; }
         }
@@ -72,7 +79,7 @@
         </div>
     </div>
 
-    <div class="admin-container">
+    <div class="admin-container" id="admin-list-view">
         <header class="admin-header">
             <h1>TWO O'CLOCK LASH <span style="font-size: 0.8rem; color: #999;">Management</span></h1>
             <button class="btn-primary" onclick="location.reload()" style="font-size: 0.8rem; padding: 5px 15px;">登出</button>
@@ -86,17 +93,24 @@
         </section>
 
         <div id="admin-results" class="results-list">
-            <!-- 搜尋結果會顯示在這裡 -->
-            <p style="text-align:center; color:#ccc; grid-column: 1/-1;">請輸入關鍵字開始搜尋...</p>
+            <!-- 初始顯示載入中 -->
+            <div class="admin-loading">
+                <div class="spinner"></div>
+                <p>正在載入客戶資料...</p>
+            </div>
         </div>
     </div>
 
-    <!-- 編輯彈窗 -->
-    <div id="editor-overlay" class="editor-overlay" onclick="closeEditor()"></div>
-    <div id="editor-modal" class="editor-modal" style="display: none;">
-        <button class="btn-close" onclick="closeEditor()">✕</button>
-        <h2 id="edit-name" style="color: #c5a059; margin-bottom: 5px;">客戶姓名</h2>
-        <p id="edit-phone" style="color: #888; margin-bottom: 20px;">0900-000-000</p>
+    <!-- 編輯視窗 (改為全頁面顯示) -->
+    <div id="admin-edit-view" class="admin-container" style="display: none; background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+        <button class="btn-primary" onclick="closeEditor()" style="background:#666; margin-bottom: 20px;">← 返回名單</button>
+        
+        <div style="display:flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h2 id="edit-name" style="color: #c5a059; margin-bottom: 5px;">客戶姓名</h2>
+                <p id="edit-phone" style="color: #888; margin-bottom: 20px;">0900-000-000</p>
+            </div>
+        </div>
 
         <div class="editor-section admin-note-area">
             <h3>✨ 服務記錄 (管理者專用)</h3>
@@ -189,7 +203,7 @@
             <img id="detail-signature" src="" style="width: 100%; border: 1px solid #eee; border-radius: 10px;">
         </div>
 
-        <button class="btn-save" onclick="saveAdminChanges()">儲存所有變更</button>
+        <button class="btn-save" onclick="saveAdminChanges()">儲存</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
