@@ -96,6 +96,18 @@ function clearSignature() {
 }
 
 // 導航與表單邏輯
+function toggleOtherInput(checkbox) {
+    const input = document.getElementById('other-name-input');
+    input.style.display = checkbox.checked ? 'block' : 'none';
+    if (!checkbox.checked) input.value = '';
+}
+
+function toggleFriendInput(checkbox) {
+    const input = document.getElementById('friend-name-input');
+    input.style.display = checkbox.checked ? 'block' : 'none';
+    if (!checkbox.checked) input.value = '';
+}
+
 function nextStep(targetStep) {
     if (targetStep === 3) {
         let allValid = true;
@@ -106,6 +118,14 @@ function nextStep(targetStep) {
             alert('請檢查紅框標示處，姓名與生日必須填寫！');
             return;
         }
+        const friendCheckbox = document.getElementById('referral-friend');
+        const friendInput = document.getElementById('friend-name-input');
+        if (friendCheckbox.checked && !friendInput.value.trim()) {
+            friendInput.style.border = '1.5px solid red';
+            alert('請填寫介紹人姓名！');
+            return;
+        }
+        if (friendInput) friendInput.style.border = '';
     }
     document.querySelectorAll('.step-content').forEach(c => c.classList.remove('active'));
     document.getElementById('step-' + targetStep).classList.add('active');

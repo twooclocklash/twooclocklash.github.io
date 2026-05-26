@@ -14,6 +14,10 @@
             <div class="logo">TWO O'CLOCK LASH</div>
             <div class="nav-links">
                 <button onclick="showSection('home')" id="nav-home">首頁</button>
+                <button onclick="showSection('price')" id="nav-price">價目表</button>
+                <button onclick="showSection('booking')" id="nav-booking">預約注意事項</button>
+                <button onclick="showSection('care')" id="nav-care">保養須知</button>
+                <button onclick="showSection('studio')" id="nav-studio">工作室資訊</button>
                 <button onclick="showSection('history')" id="nav-history">查詢紀錄</button>
             </div>
         </nav>
@@ -95,9 +99,15 @@
                                         <label><input type="checkbox" name="referral" value="IG"> Instagram</label>
                                         <label><input type="checkbox" name="referral" value="FB"> Facebook</label>
                                         <label><input type="checkbox" name="referral" value="Search"> 搜尋關鍵字</label>
-                                        <label><input type="checkbox" name="referral" value="Friend"> 朋友介紹</label>
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <label><input type="checkbox" name="referral" value="Friend" id="referral-friend" onchange="toggleFriendInput(this)"> 朋友介紹</label>
+                                            <input type="text" id="friend-name-input" placeholder="請輸入介紹人姓名" style="display:none; margin-left:20px;">
+                                        </div>
                                         <label><input type="checkbox" name="referral" value="Nearby"> 在家附近</label>
-                                        <label><input type="checkbox" name="referral" value="Other"> 其他</label>
+                                        <div style="display:flex; flex-direction:column; gap:6px;">
+                                            <label><input type="checkbox" name="referral" value="Other" id="referral-other" onchange="toggleOtherInput(this)"> 其他</label>
+                                            <input type="text" id="other-name-input" placeholder="請輸入來源" style="display:none; margin-left:20px;">
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -184,6 +194,34 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- 工作室資訊頁 -->
+            <section id="studio-section">
+                <div class="glass-card">
+                    <h2>工作室資訊</h2>
+                </div>
+            </section>
+
+            <!-- 價目表頁 -->
+            <section id="price-section">
+                <div class="glass-card">
+                    <h2>價目表</h2>
+                </div>
+            </section>
+
+            <!-- 預約注意事項頁 -->
+            <section id="booking-section">
+                <div class="glass-card">
+                    <h2>預約注意事項</h2>
+                </div>
+            </section>
+
+            <!-- 保養須知頁 -->
+            <section id="care-section">
+                <div class="glass-card">
+                    <h2>保養須知</h2>
                 </div>
             </section>
 

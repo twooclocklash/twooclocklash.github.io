@@ -8,7 +8,10 @@ let currentCustomerId = null;
 let allRecords = [];
 let canvases = { left: null, right: null };
 let ctxs = { left: null, right: null };
-let isDrawingMarking = false;
+let activeFsSide = null;
+let fsCanvas, fsCtx;
+let fsIsDrawing = false;
+let fsHistory = [];
 
 // 登入檢查
 function checkLogin() {
@@ -22,49 +25,90 @@ function checkLogin() {
     }
 }
 
-// 初始化標記畫布
+// 初始化標記畫布（僅設定尺寸，小畫板只作預覽）
 function initMarkingCanvases() {
     ['left', 'right'].forEach(side => {
         const c = document.getElementById(`canvas-${side}`);
         canvases[side] = c;
         ctxs[side] = c.getContext('2d');
-        
-        // 設定畫布大小 (需與底圖比例一致)
         const parent = c.parentElement;
         c.width = parent.offsetWidth;
         c.height = parent.offsetHeight;
-
-        // 畫筆設定 (紅色)
-        ctxs[side].strokeStyle = '#ff0000';
-        ctxs[side].lineWidth = 2;
-        ctxs[side].lineJoin = 'round';
-        ctxs[side].lineCap = 'round';
-
-        c.onpointerdown = (e) => {
-            isDrawingMarking = true;
-            ctxs[side].beginPath();
-            const rect = c.getBoundingClientRect();
-            // 修正：使用 clientX/Y 減去 rect 的位置，並考慮縮放
-            const x = (e.clientX - rect.left) * (c.width / rect.width);
-            const y = (e.clientY - rect.top) * (c.height / rect.height);
-            ctxs[side].moveTo(x, y);
-            c.setPointerCapture(e.pointerId);
-        };
-        c.onpointermove = (e) => {
-            if (!isDrawingMarking) return;
-            const rect = c.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * (c.width / rect.width);
-            const y = (e.clientY - rect.top) * (c.height / rect.height);
-            ctxs[side].lineTo(x, y);
-            ctxs[side].stroke();
-        };
-        c.onpointerup = () => { isDrawingMarking = false; };
-        c.style.touchAction = 'none';
     });
 }
 
 function clearMarking(side) {
     if (ctxs[side]) ctxs[side].clearRect(0, 0, canvases[side].width, canvases[side].height);
+}
+
+// 全螢幕畫板
+function openFullscreenCanvas(side) {
+    activeFsSide = side;
+    fsHistory = [];
+
+    const overlay = document.getElementById('fs-overlay');
+    overlay.style.display = 'flex';
+
+    fsCanvas = document.getElementById('canvas-fs');
+    const container = fsCanvas.parentElement;
+    fsCanvas.width = container.offsetWidth;
+    fsCanvas.height = container.offsetHeight;
+
+    fsCtx = fsCanvas.getContext('2d');
+    fsCtx.strokeStyle = '#ff0000';
+    fsCtx.lineWidth = 2.5;
+    fsCtx.lineJoin = 'round';
+    fsCtx.lineCap = 'round';
+
+    // 把小畫板現有內容複製過來
+    fsCtx.drawImage(canvases[side], 0, 0, fsCanvas.width, fsCanvas.height);
+    saveFsHistory();
+
+    document.getElementById('fs-title').textContent = side === 'left' ? '左眼標記' : '右眼標記';
+
+    fsCanvas.onpointerdown = (e) => {
+        fsIsDrawing = true;
+        fsCtx.beginPath();
+        const rect = fsCanvas.getBoundingClientRect();
+        fsCtx.moveTo((e.clientX - rect.left) * (fsCanvas.width / rect.width),
+                     (e.clientY - rect.top)  * (fsCanvas.height / rect.height));
+        fsCanvas.setPointerCapture(e.pointerId);
+    };
+    fsCanvas.onpointermove = (e) => {
+        if (!fsIsDrawing) return;
+        const rect = fsCanvas.getBoundingClientRect();
+        fsCtx.lineTo((e.clientX - rect.left) * (fsCanvas.width / rect.width),
+                     (e.clientY - rect.top)  * (fsCanvas.height / rect.height));
+        fsCtx.stroke();
+    };
+    fsCanvas.onpointerup = () => {
+        if (!fsIsDrawing) return;
+        fsIsDrawing = false;
+        saveFsHistory();
+    };
+    fsCanvas.style.touchAction = 'none';
+}
+
+function saveFsHistory() {
+    fsHistory.push(fsCtx.getImageData(0, 0, fsCanvas.width, fsCanvas.height));
+}
+
+function clearFsCanvas() {
+    fsCtx.clearRect(0, 0, fsCanvas.width, fsCanvas.height);
+    saveFsHistory();
+}
+
+function undoFsCanvas() {
+    if (fsHistory.length <= 1) return;
+    fsHistory.pop();
+    fsCtx.putImageData(fsHistory[fsHistory.length - 1], 0, 0);
+}
+
+function confirmFsCanvas() {
+    // 寫回小畫板
+    ctxs[activeFsSide].clearRect(0, 0, canvases[activeFsSide].width, canvases[activeFsSide].height);
+    ctxs[activeFsSide].drawImage(fsCanvas, 0, 0, canvases[activeFsSide].width, canvases[activeFsSide].height);
+    document.getElementById('fs-overlay').style.display = 'none';
 }
 
 // 抓取所有紀錄 (初始載入)
@@ -138,6 +182,15 @@ async function openEditor(customer) {
     // 填充編輯欄位 (管理者專用)
     document.getElementById('edit-upper').value = customer.upper_lash_count || '';
     document.getElementById('edit-lower').value = customer.lower_lash_count || '';
+    document.getElementById('edit-removal').value = customer.removal_lash_count || '';
+    const addonValues = customer.addon_service || [];
+    document.querySelectorAll('input[name="addon"]').forEach(cb => {
+        cb.checked = addonValues.includes(cb.value);
+    });
+    const discountValues = customer.discount || [];
+    document.querySelectorAll('input[name="discount"]').forEach(cb => {
+        cb.checked = discountValues.includes(cb.value);
+    });
     document.getElementById('edit-notes').value = customer.admin_notes || '';
 
     // 填充唯讀基本資料
@@ -188,6 +241,9 @@ async function saveAdminChanges() {
             .update({
                 upper_lash_count: document.getElementById('edit-upper').value,
                 lower_lash_count: document.getElementById('edit-lower').value,
+                removal_lash_count: document.getElementById('edit-removal').value,
+                addon_service: [...document.querySelectorAll('input[name="addon"]:checked')].map(cb => cb.value),
+                discount: [...document.querySelectorAll('input[name="discount"]:checked')].map(cb => cb.value),
                 admin_notes: document.getElementById('edit-notes').value,
                 marking_left: canvases.left.toDataURL(),
                 marking_right: canvases.right.toDataURL()
